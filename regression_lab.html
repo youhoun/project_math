@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Least Squares Lab — Study Hours vs. Exam Score</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,500;0,600;0,700;1,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#EDEAE0;
+    --paper-raised:#F5F3EB;
+    --ink:#20242B;
+    --ink-soft:#565F5A;
+    --rule:#C3CBBE;
+    --teal:#2F6F6E;
+    --teal-deep:#1E4B4A;
+    --rust:#B4452A;
+    --gold:#C79A2E;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'IBM Plex Sans', sans-serif;
+    padding:28px 20px 60px;
+    background-image:
+      linear-gradient(var(--rule) 1px, transparent 1px),
+      linear-gradient(90deg, var(--rule) 1px, transparent 1px);
+    background-size:28px 28px;
+    background-position:-1px -1px;
+  }
+  .wrap{max-width:1080px;margin:0 auto;}
+
+  /* header */
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--teal-deep);
+    display:flex;align-items:center;gap:10px;
+  }
+  .eyebrow::before{content:"§";font-size:14px;color:var(--rust);}
+  h1{
+    font-family:'Spectral',serif;
+    font-weight:700;
+    font-size:clamp(28px,4vw,42px);
+    margin:6px 0 4px;
+    letter-spacing:-.01em;
+  }
+  .sub{
+    color:var(--ink-soft);
+    font-size:15px;
+    max-width:640px;
+    line-height:1.5;
+    margin-bottom:22px;
+  }
+  .sub em{font-style:italic;color:var(--teal-deep);}
+
+  /* card */
+  .card{
+    background:var(--paper-raised);
+    border:1px solid var(--rule);
+    border-radius:3px;
+    padding:20px 22px;
+    margin-bottom:20px;
+    box-shadow:0 1px 0 rgba(32,36,43,.03);
+  }
+  .card h2{
+    font-family:'Spectral',serif;
+    font-size:19px;
+    font-weight:600;
+    margin:0 0 4px;
+  }
+  .card .hint{
+    font-size:13px;
+    color:var(--ink-soft);
+    margin-bottom:14px;
+  }
+
+  .grid2{display:grid;grid-template-columns:1.05fr 1fr;gap:20px;}
+  @media (max-width:820px){.grid2{grid-template-columns:1fr;}}
+
+  /* toggle */
+  .toggle-row{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+  .toggle{
+    display:inline-flex;background:var(--paper);border:1px solid var(--rule);border-radius:20px;padding:3px;
+  }
+  .toggle button{
+    border:none;background:none;font-family:'IBM Plex Mono',monospace;font-size:12.5px;
+    padding:6px 14px;border-radius:16px;cursor:pointer;color:var(--ink-soft);
+    transition:background .15s, color .15s;
+  }
+  .toggle button.active{background:var(--teal);color:#fff;}
+
+  /* table */
+  table{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:13px;}
+  thead th{
+    text-align:left;font-weight:600;color:var(--teal-deep);
+    border-bottom:1px solid var(--rule);padding:6px 6px 8px;
+    font-size:11px;letter-spacing:.06em;text-transform:uppercase;
+  }
+  tbody td{padding:4px 6px;border-bottom:1px solid rgba(195,203,190,.5);}
+  tbody tr:hover{background:rgba(47,111,110,.05);}
+  input[type=number]{
+    width:64px;border:1px solid var(--rule);background:#fff;border-radius:2px;
+    padding:4px 6px;font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink);
+  }
+  input[type=number]:focus{outline:2px solid var(--teal);outline-offset:1px;}
+  .del-btn{
+    border:1px solid var(--rule);background:#fff;color:var(--rust);cursor:pointer;
+    border-radius:2px;width:24px;height:24px;font-size:14px;line-height:1;
+  }
+  .del-btn:hover{background:var(--rust);color:#fff;border-color:var(--rust);}
+  .table-actions{display:flex;gap:10px;margin-top:12px;}
+  .btn{
+    font-family:'IBM Plex Mono',monospace;font-size:12.5px;letter-spacing:.02em;
+    border:1px solid var(--teal-deep);background:var(--teal);color:#fff;
+    padding:8px 14px;border-radius:2px;cursor:pointer;
+  }
+  .btn:hover{background:var(--teal-deep);}
+  .btn.ghost{background:transparent;color:var(--teal-deep);}
+  .btn.ghost:hover{background:rgba(47,111,110,.08);}
+
+  canvas{width:100%;display:block;}
+
+  /* matrix panel */
+  .matrix-row{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start;}
+  .matrix-block{font-family:'IBM Plex Mono',monospace;font-size:12.5px;}
+  .matrix-block .label{
+    font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:6px;
+  }
+  .matrix{
+    border-left:2px solid var(--ink);border-right:2px solid var(--ink);
+    padding:6px 10px;display:inline-block;
+  }
+  .matrix .mrow{display:flex;gap:14px;}
+  .matrix .mrow + .mrow{margin-top:4px;}
+  .matrix .mrow span{width:56px;text-align:right;}
+  .arrow{align-self:center;font-size:20px;color:var(--rust);padding:0 4px;margin-top:26px;}
+
+  /* stats */
+  .stat-row{display:flex;gap:14px;flex-wrap:wrap;}
+  .stat{
+    flex:1;min-width:140px;background:var(--paper);border:1px solid var(--rule);
+    border-radius:3px;padding:12px 14px;
+  }
+  .stat .k{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);}
+  .stat .v{font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:600;color:var(--teal-deep);margin-top:2px;}
+  .equation{
+    font-family:'IBM Plex Mono',monospace;font-size:14.5px;background:var(--paper);
+    border:1px dashed var(--rule);padding:10px 14px;border-radius:2px;margin-top:14px;
+    color:var(--ink);
+  }
+  .equation .rust{color:var(--rust);font-weight:600;}
+  .equation .teal{color:var(--teal-deep);font-weight:600;}
+
+  footer{text-align:center;color:var(--ink-soft);font-size:12px;margin-top:26px;font-family:'IBM Plex Mono',monospace;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="eyebrow">Least Squares Lab · Notebook 02</div>
+  <h1>Study Hours → Exam Score</h1>
+  <p class="sub">Edit the data below and watch the normal equation <em>β = (AᵀA)⁻¹Aᵀy</em> resolve in real time — from raw scores, to the design matrix, to the fitted line.</p>
+
+  <div class="card">
+    <div class="toggle-row">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--ink-soft);">Model:</span>
+      <div class="toggle">
+        <button id="btn-single" class="active">study hours only</button>
+        <button id="btn-double">study + sleep hours</button>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div>
+        <h2>Data</h2>
+        <div class="hint">One row per student. Add or remove rows freely — everything recomputes live.</div>
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Study hrs</th>
+              <th>Sleep hrs</th>
+              <th>Exam score</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="data-body"></tbody>
+        </table>
+        <div class="table-actions">
+          <button class="btn" id="add-row">+ add student</button>
+          <button class="btn ghost" id="reset-data">reset to defaults</button>
+        </div>
+      </div>
+
+      <div>
+        <h2 id="chart-title">Fit</h2>
+        <div class="hint" id="chart-hint">Observed scores (dots) against the least-squares line.</div>
+        <canvas id="fit-canvas" width="480" height="340"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>The normal equation, live</h2>
+    <div class="hint">Built directly from your data above — A is the design matrix, β is solved from (AᵀA)⁻¹Aᵀy.</div>
+    <div class="matrix-row" id="matrix-panel"></div>
+  </div>
+
+  <div class="card">
+    <div class="grid2">
+      <div>
+        <h2>Residuals</h2>
+        <div class="hint">y − ŷ for every student. A random scatter around zero is a good sign; a curve or trend suggests the model is missing something.</div>
+        <canvas id="resid-canvas" width="480" height="240"></canvas>
+      </div>
+      <div>
+        <h2>Fit quality</h2>
+        <div class="hint">&nbsp;</div>
+        <div class="stat-row" id="stats"></div>
+        <div class="equation" id="equation-line"></div>
+      </div>
+    </div>
+  </div>
+
+  <footer>computed entirely in-browser · no data leaves this page</footer>
+</div>
+
+<script>
+/* ---------------- data ---------------- */
+let rows = [
+  {study:1, sleep:4.5, score:52},
+  {study:2, sleep:5.0, score:58},
+  {study:3, sleep:5.5, score:61},
+  {study:4, sleep:6.0, score:68},
+  {study:5, sleep:6.5, score:72},
+  {study:6, sleep:6.0, score:74},
+  {study:7, sleep:7.0, score:80},
+  {study:8, sleep:7.5, score:85},
+  {study:9, sleep:7.0, score:87},
+  {study:10, sleep:8.0, score:94},
+];
+const DEFAULTS = JSON.parse(JSON.stringify(rows));
+let mode = 'single'; // 'single' or 'double'
+
+/* ---------------- matrix helpers ---------------- */
+function transpose(M){ return M[0].map((_,c)=>M.map(r=>r[c])); }
+function matmul(A,B){
+  const r=A.length, k=A[0].length, c=B[0].length;
+  const out = Array.from({length:r},()=>Array(c).fill(0));
+  for(let i=0;i<r;i++) for(let j=0;j<c;j++){
+    let s=0; for(let t=0;t<k;t++) s+=A[i][t]*B[t][j];
+    out[i][j]=s;
+  }
+  return out;
+}
+function matvec(A,v){
+  return A.map(row=>row.reduce((s,x,i)=>s+x*v[i],0));
+}
+// Gauss-Jordan inverse for small square matrices
+function invert(M){
+  const n = M.length;
+  const A = M.map((row,i)=>[...row, ...Array.from({length:n},(_,j)=>i===j?1:0)]);
+  for(let col=0; col<n; col++){
+    let pivot = col;
+    for(let r=col+1;r<n;r++) if(Math.abs(A[r][col])>Math.abs(A[pivot][col])) pivot=r;
+    [A[col],A[pivot]]=[A[pivot],A[col]];
+    const div = A[col][col] || 1e-12;
+    for(let j=0;j<2*n;j++) A[col][j]/=div;
+    for(let r=0;r<n;r++){
+      if(r===col) continue;
+      const factor = A[r][col];
+      for(let j=0;j<2*n;j++) A[r][j]-=factor*A[col][j];
+    }
+  }
+  return A.map(row=>row.slice(n));
+}
+
+/* ---------------- regression ---------------- */
+function computeRegression(){
+  const n = rows.length;
+  const y = rows.map(r=>r.score);
+  let A;
+  if(mode==='single'){
+    A = rows.map(r=>[1, r.study]);
+  } else {
+    A = rows.map(r=>[1, r.study, r.sleep]);
+  }
+  const At = transpose(A);
+  const AtA = matmul(At, A);
+  const Aty = matvec(At, y);
+  const AtA_inv = invert(AtA);
+  const beta = matvec(AtA_inv, Aty);
+  const yhat = A.map(row=>row.reduce((s,x,i)=>s+x*beta[i],0));
+  const residuals = y.map((yi,i)=>yi-yhat[i]);
+  const mse = residuals.reduce((s,r)=>s+r*r,0)/n;
+  const meanY = y.reduce((a,b)=>a+b,0)/n;
+  const ssTot = y.reduce((s,yi)=>s+(yi-meanY)**2,0);
+  const ssRes = residuals.reduce((s,r)=>s+r*r,0);
+  const r2 = 1 - ssRes/ssTot;
+  return {A, At, AtA, Aty, AtA_inv, beta, yhat, residuals, mse, r2};
+}
+
+/* ---------------- rendering: table ---------------- */
+const tbody = document.getElementById('data-body');
+function renderTable(){
+  tbody.innerHTML = '';
+  rows.forEach((r,i)=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${i+1}</td>
+      <td><input type="number" step="0.5" value="${r.study}" data-i="${i}" data-k="study"></td>
+      <td><input type="number" step="0.5" value="${r.sleep}" data-i="${i}" data-k="sleep" ${mode==='single'?'style="opacity:.35"':''}></td>
+      <td><input type="number" step="1" value="${r.score}" data-i="${i}" data-k="score"></td>
+      <td><button class="del-btn" data-i="${i}" title="remove student">×</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+  tbody.querySelectorAll('input').forEach(inp=>{
+    inp.addEventListener('input', e=>{
+      const i = +e.target.dataset.i, k = e.target.dataset.k;
+      const val = parseFloat(e.target.value);
+      rows[i][k] = isNaN(val) ? 0 : val;
+      renderAll(false);
+    });
+  });
+  tbody.querySelectorAll('.del-btn').forEach(btn=>{
+    btn.addEventListener('click', e=>{
+      const i = +e.target.dataset.i;
+      if(rows.length<=3){ return; }
+      rows.splice(i,1);
+      renderAll(true);
+    });
+  });
+}
+
+/* ---------------- rendering: charts ---------------- */
+function drawFitChart(res){
+  const canvas = document.getElementById('fit-canvas');
+  const ctx = canvas.getContext('2d');
+  const W=canvas.width, H=canvas.height, pad=44;
+  ctx.clearRect(0,0,W,H);
+
+  let xs, ys, xLabel;
+  if(mode==='single'){
+    xs = rows.map(r=>r.study); ys = rows.map(r=>r.score); xLabel='Study hours';
+  } else {
+    xs = res.yhat; ys = rows.map(r=>r.score); xLabel='Predicted score (ŷ)';
+  }
+  const xmin=Math.min(...xs)-1, xmax=Math.max(...xs)+1;
+  const ymin=Math.min(...ys)-6, ymax=Math.max(...ys)+6;
+  const sx = x => pad + (x-xmin)/(xmax-xmin)*(W-2*pad);
+  const sy = y => H-pad - (y-ymin)/(ymax-ymin)*(H-2*pad);
+
+  // axes
+  ctx.strokeStyle = '#8b9488'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(pad,H-pad); ctx.lineTo(W-pad,H-pad); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(pad,pad); ctx.lineTo(pad,H-pad); ctx.stroke();
+
+  ctx.fillStyle = '#565F5A';
+  ctx.font = '11px IBM Plex Mono';
+  ctx.fillText(xLabel, W/2-30, H-8);
+  ctx.save();
+  ctx.translate(14, H/2+30);
+  ctx.rotate(-Math.PI/2);
+  ctx.fillText('Exam score', 0, 0);
+  ctx.restore();
+
+  if(mode==='single'){
+    // fitted line
+    ctx.strokeStyle = '#2F6F6E'; ctx.lineWidth=2.5;
+    ctx.beginPath();
+    const x0=xmin, x1=xmax;
+    ctx.moveTo(sx(x0), sy(res.beta[0]+res.beta[1]*x0));
+    ctx.lineTo(sx(x1), sy(res.beta[0]+res.beta[1]*x1));
+    ctx.stroke();
+  } else {
+    // y = x reference (perfect prediction)
+    ctx.strokeStyle = '#2F6F6E'; ctx.lineWidth=2; ctx.setLineDash([5,4]);
+    ctx.beginPath();
+    ctx.moveTo(sx(xmin), sy(xmin));
+    ctx.lineTo(sx(xmax), sy(xmax));
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // points
+  xs.forEach((xv,i)=>{
+    ctx.beginPath();
+    ctx.arc(sx(xv), sy(ys[i]), 5, 0, Math.PI*2);
+    ctx.fillStyle = '#C79A2E';
+    ctx.fill();
+    ctx.strokeStyle = '#20242B'; ctx.lineWidth=1; ctx.stroke();
+  });
+}
+
+function drawResidChart(res){
+  const canvas = document.getElementById('resid-canvas');
+  const ctx = canvas.getContext('2d');
+  const W=canvas.width, H=canvas.height, pad=44;
+  ctx.clearRect(0,0,W,H);
+
+  const xs = rows.map(r=>r.study);
+  const rs = res.residuals;
+  const xmin=Math.min(...xs)-1, xmax=Math.max(...xs)+1;
+  const maxAbs = Math.max(2, ...rs.map(Math.abs))*1.2;
+  const sx = x => pad + (x-xmin)/(xmax-xmin)*(W-2*pad);
+  const sy = r => H/2 - r/maxAbs*(H/2-pad);
+
+  ctx.strokeStyle = '#8b9488'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(pad,H/2); ctx.lineTo(W-pad,H/2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(pad,pad); ctx.lineTo(pad,H-pad); ctx.stroke();
+  ctx.fillStyle='#565F5A'; ctx.font='11px IBM Plex Mono';
+  ctx.fillText('Study hours', W/2-25, H-8);
+
+  xs.forEach((xv,i)=>{
+    ctx.beginPath();
+    ctx.moveTo(sx(xv), H/2);
+    ctx.lineTo(sx(xv), sy(rs[i]));
+    ctx.strokeStyle = rs[i]>=0 ? '#2F6F6E' : '#B4452A';
+    ctx.lineWidth=2;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(sx(xv), sy(rs[i]), 4, 0, Math.PI*2);
+    ctx.fillStyle = rs[i]>=0 ? '#2F6F6E' : '#B4452A';
+    ctx.fill();
+  });
+}
+
+/* ---------------- rendering: matrix + stats ---------------- */
+function fmt(n, d=2){ return (Math.round(n*10**d)/10**d).toFixed(d); }
+
+function renderMatrixPanel(res){
+  const panel = document.getElementById('matrix-panel');
+  const n = rows.length;
+  const showRows = Math.min(n,4);
+  const Arows = res.A.slice(0,showRows).map(r=>r.map(x=>fmt(x,1)));
+  const dots = n>showRows ? '<div class="mrow">⋮</div>' : '';
+
+  const AtACells = res.AtA.map(r=>r.map(x=>fmt(x)));
+  const AtyCells = res.Aty.map(x=>fmt(x));
+  const betaCells = res.beta.map(x=>fmt(x,3));
+
+  function block(label, rowsArr){
+    return `<div class="matrix-block"><div class="label">${label}</div><div class="matrix">
+      ${rowsArr.map(r=>`<div class="mrow">${(Array.isArray(r)?r:[r]).map(v=>`<span>${v}</span>`).join('')}</div>`).join('')}
+    </div></div>`;
+  }
+
+  panel.innerHTML = `
+    ${block('A ('+n+'×'+(mode==='single'?2:3)+')', [...Arows, ...(dots?[['⋮']]:[])])}
+    <div class="arrow">→</div>
+    ${block('AᵀA', AtACells)}
+    <div class="arrow">&nbsp;</div>
+    ${block('Aᵀy', AtyCells)}
+    <div class="arrow">⇒</div>
+    ${block('β = (AᵀA)⁻¹Aᵀy', betaCells)}
+  `;
+}
+
+function renderStats(res){
+  const stats = document.getElementById('stats');
+  stats.innerHTML = `
+    <div class="stat"><div class="k">MSE</div><div class="v">${fmt(res.mse,3)}</div></div>
+    <div class="stat"><div class="k">R²</div><div class="v">${fmt(res.r2,3)}</div></div>
+    <div class="stat"><div class="k">n</div><div class="v">${rows.length}</div></div>
+  `;
+  const eq = document.getElementById('equation-line');
+  if(mode==='single'){
+    eq.innerHTML = `ŷ = <span class="teal">${fmt(res.beta[0])}</span> + <span class="rust">${fmt(res.beta[1])}</span> · study_hours`;
+  } else {
+    eq.innerHTML = `ŷ = <span class="teal">${fmt(res.beta[0])}</span> + <span class="rust">${fmt(res.beta[1])}</span> · study_hours + <span class="rust">${fmt(res.beta[2])}</span> · sleep_hours`;
+  }
+}
+
+/* ---------------- orchestration ---------------- */
+function renderAll(rebuildTable){
+  if(rebuildTable) renderTable();
+  const res = computeRegression();
+  drawFitChart(res);
+  drawResidChart(res);
+  renderMatrixPanel(res);
+  renderStats(res);
+
+  document.getElementById('chart-title').textContent = mode==='single' ? 'Fit' : 'Predicted vs. actual';
+  document.getElementById('chart-hint').textContent = mode==='single'
+    ? 'Observed scores (dots) against the least-squares line.'
+    : 'Each student\'s predicted score vs. their actual score — the dashed line is a perfect prediction.';
+}
+
+document.getElementById('add-row').addEventListener('click', ()=>{
+  rows.push({study:5, sleep:6, score:70});
+  renderAll(true);
+});
+document.getElementById('reset-data').addEventListener('click', ()=>{
+  rows = JSON.parse(JSON.stringify(DEFAULTS));
+  renderAll(true);
+});
+document.getElementById('btn-single').addEventListener('click', ()=>{
+  mode='single';
+  document.getElementById('btn-single').classList.add('active');
+  document.getElementById('btn-double').classList.remove('active');
+  renderAll(true);
+});
+document.getElementById('btn-double').addEventListener('click', ()=>{
+  mode='double';
+  document.getElementById('btn-double').classList.add('active');
+  document.getElementById('btn-single').classList.remove('active');
+  renderAll(true);
+});
+
+renderAll(true);
+</script>
+</body>
+</html>
